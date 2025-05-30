@@ -63,7 +63,25 @@ az deployment group create \
 
 
 # Create AKS
-SUBNET_ID=$(az network vnet subnet show --resource-group $RG --vnet-name $VNET_NAME --name $AKS_SUBNET --query id -o tsv)
+# SUBNET_ID=$(az network vnet subnet show --resource-group $RG --vnet-name $VNET_NAME --name $AKS_SUBNET --query id -o tsv)
+
+echo "Checking values:"
+echo "RG=$RG"
+echo "VNET_NAME=$VNET_NAME"
+echo "AKS_SUBNET=$AKS_SUBNET"
+
+while true; do
+  SUBNET_ID=$(az network vnet subnet show --resource-group $RG --vnet-name $VNET_NAME --name $AKS_SUBNET --query id -o tsv 2>/dev/null)
+  if [[ -n "$SUBNET_ID" ]]; then
+    echo "Subnet found: $SUBNET_ID"
+    break
+  else
+    echo "Waiting for subnet to be available..."
+    sleep 5
+  fi
+done
+
+
 
 az aks create \
   --resource-group $RG \
@@ -90,8 +108,21 @@ az aks enable-addons \
   --addons ingress-appgw \
   --appgw-id $APPGW_ID
 
+echo "Waiting for ingress-appgw pod to be created and ready..."
+
+while true; do
+  POD_STATUS=$(kubectl get pods -n kube-system -l app=ingress-appgw -o jsonpath='{.items[0].status.phase}' 2>/dev/null)
+  if [[ "$POD_STATUS" == "Running" ]]; then
+    echo "AGIC pod is running."
+    break
+  else
+    echo "Waiting for AGIC pod... current status: $POD_STATUS"
+    sleep 10
+  fi
+done
+
 # Deploy K8s objects
-kubectl apply -f k8s/deployment.yaml
-kubectl apply -f k8s/service.yaml
-kubectl apply -f k8s/ingress.yaml
+kubectl apply -f azure/k8s/deployment.yaml
+kubectl apply -f azure/k8s/service.yaml
+kubectl apply -f azure/k8s/ingress.yaml
 
