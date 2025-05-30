@@ -2,7 +2,8 @@
 
 # Variables
 RG="rg-k8s-api-example-rg"
-LOCATION="westeurope"
+# LOCATION="westeurope"
+LOCATION="uksouth"
 VNET_NAME="vnet-k8s-test"
 AKS_SUBNET="aks-subnet-test"
 APPGW_SUBNET="appgw-subnet-test"
