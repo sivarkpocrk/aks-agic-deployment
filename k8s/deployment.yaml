@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-api
+  labels:
+    app: test-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: test-api
+  template:
+    metadata:
+      labels:
+        app: test-api
+    spec:
+      containers:
+      - name: test-api
+        image: hashicorp/http-echo
+        args:
+          - "-text=Hello from pod on port 8080"
+          - "-listen=:8080"   # optional but explicit
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
+          limits:
+            cpu: "100m"
+            memory: "128Mi"

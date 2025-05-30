@@ -1,0 +1,37 @@
+name: Deploy AKS with AGIC Terrraform
+# This workflow deploys an AKS cluster with AGIC using Terraform
+# It initializes Terraform, applies the configuration, and can delete resources if specified
+# by the user through workflow dispatch inputs.
+# if used below, it will run on every push to main branch
+# Uncomment the following lines to enable automatic deployment on push to main branch
+# on:
+#   push:
+#     branches: [ main ]
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy-method:
+        description: "deployment method - terraform or az cli or bicep"
+        required: true
+        default: "terraform"
+
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Terraform Init and Apply
+      run: |
+        cd azure/terraform
+        terraform init
+        terraform apply -auto-approve

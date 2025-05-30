@@ -1,0 +1,42 @@
+name: Deploy AKS + AGIC App using Azure CLI
+# This workflow deploys an AKS cluster with AGIC using Azure CLI
+# It runs a script that handles the deployment process.
+# It can be triggered manually with inputs to specify the deployment method.
+
+# by the user through workflow dispatch inputs.
+# if used below, it will run on every push to main branch
+# Uncomment the following lines to enable automatic deployment on push to main branch
+# on:
+#   push:
+#     branches: [ main ]
+#     paths:
+#       - 'azure/terraform/**'
+#       - '.github/workflows/deploy.yml'
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy-method:
+        description: "deployment method - terraform or az cli or bicep"
+        required: true
+        default: "terraform"
+        type: choice
+        options:
+          - terraform
+          - az cli
+          - bicep
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Deploy using CLI
+      run: |
+        bash azure/scripts/deploy.sh
