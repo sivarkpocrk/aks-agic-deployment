@@ -34,11 +34,11 @@ az network public-ip create \
 
 # Deploy App Gateway via Bicep/ARM or manual script (simplified here)
 
-az deployment group create \
-  --name deploy-appgw \
-  --resource-group $RG \
-  --template-file azure/arm/appgw-template.json \
-  --parameters @azure/arm/appgw-template-test-parm.json
+# az deployment group create \
+#   --name deploy-appgw \
+#   --resource-group $RG \
+#   --template-file azure/arm/appgw-template.json \
+#   --parameters @azure/arm/appgw-template-test-parm.json
 
   # --resource-group rg-k8s-api-example-rg \
   # --template-file appgw-template-test.json \
@@ -47,8 +47,8 @@ az deployment group create \
 # Suggest to use validated template if needed
 
 az deployment group create \
-  --resource-group rg-k8s-api-example-rg \
-  --template-file azure/bicep/appgw.bicep \
+  --resource-group $RG \
+  --template-file azure/arm/appgw-test.bicep \
   --parameters \
     appGatewayName=$APPGW_NAME \
     vnetName=$VNET_NAME \

@@ -16,15 +16,16 @@ param publicIpName string
 var subnetResourceId = resourceId('Microsoft.Network/virtualNetworks/subnets', vnetName, subnetName)
 var publicIpResourceId = resourceId('Microsoft.Network/publicIPAddresses', publicIpName)
 
-resource appGw 'Microsoft.Network/applicationGateways@2021-08-01' = {
+resource appGw 'Microsoft.Network/applicationGateways@2024-05-01' = {
   name: appGatewayName
   location: location
-  sku: {
-    name: 'Standard_v2'
-    tier: 'Standard_v2'
-    capacity: 2
-  }
   properties: {
+    sku: {
+      name: 'Standard_v2'
+      tier: 'Standard_v2'
+      family: 'Generation_1'
+      capacity: 2
+    }
     gatewayIPConfigurations: [
       {
         name: 'appGatewayIpConfig'
