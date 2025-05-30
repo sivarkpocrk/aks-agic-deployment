@@ -40,7 +40,43 @@ git commit -m "Initial AKS + AGIC setup with Terraform and GitHub Actions"
 # Push
 git push -u origin main
 
+# Step to add secrets
+
+SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+
+az ad sp create-for-rbac \
+  --name "github-deploy-aks-agic" \
+  --role "Contributor" \
+  --scopes /subscriptions/$SUBSCRIPTION_ID \
+  --sdk-auth
+
+
+{
+  "clientId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "clientSecret": "xxxxxxxxxxxxxxxx",
+  "subscriptionId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "tenantId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+  "activeDirectoryEndpointUrl": "https://login.microsoftonline.com",
+  "resourceManagerEndpointUrl": "https://management.azure.com/",
+  "activeDirectoryGraphResourceId": "https://graph.windows.net/",
+  "sqlManagementEndpointUrl": "https://management.core.windows.net:8443/",
+  "galleryEndpointUrl": "https://gallery.azure.com/",
+  "managementEndpointUrl": "https://management.core.windows.net/"
+}
+
+above example Output will be displayed on terminal (azure cli) after service principal creation command and copy the JSON output and follow below step.
+
+## Add to GitHub Repository Secrets
+Go to your GitHub repo.
+
+Navigate to: Settings > Secrets and variables > Actions > New repository secret.
+
+Name it: AZURE_CREDENTIALS or your desired variable name
+
+Paste the entire JSON output from the command above.
+
 Go to GitHub repo → Settings → Secrets and Variables → Actions:
+
 
 Add:
 
