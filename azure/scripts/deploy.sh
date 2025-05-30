@@ -121,6 +121,40 @@ while true; do
   fi
 done
 
+
+# Get AKS Managed Identity client ID
+
+SUB_ID=$(az account show --query id -o tsv)
+
+
+IDENTITY_CLIENT_ID=$(az aks show \
+  --resource-group $RG \
+  --name $AKS_NAME \
+  --query "identityProfile.kubeletidentity.clientId" -o tsv)
+
+# Get the AKS MI object ID for AGIC (not kubelet, but AKS MSI)
+AGIC_PRINCIPAL_ID=$(az aks show \
+  --resource-group $RG \
+  --name $AKS_NAME \
+  --query "identity.principalId" -o tsv)
+
+# Assign required roles
+az role assignment create \
+  --assignee $AGIC_PRINCIPAL_ID \
+  --role "Reader" \
+  --scope "/subscriptions/$SUB_ID/resourceGroups/$RG"
+
+az role assignment create \
+  --assignee $AGIC_PRINCIPAL_ID \
+  --role "Contributor" \
+  --scope $(az network application-gateway show --resource-group $RG --name $APPGW_NAME --query id -o tsv)
+
+az role assignment create \
+  --assignee $AGIC_PRINCIPAL_ID \
+  --role "Network Contributor" \
+  --scope "/subscriptions/$SUB_ID/resourceGroups/$RG/providers/Microsoft.Network/virtualNetworks/$VNET_NAME/subnets/$APPGW_SUBNET"
+
+
 # Deploy K8s objects
 kubectl apply -f k8s/deployment.yaml
 kubectl apply -f k8s/service.yaml
