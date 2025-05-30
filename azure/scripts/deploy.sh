@@ -122,7 +122,7 @@ while true; do
 done
 
 # Deploy K8s objects
-kubectl apply -f azure/k8s/deployment.yaml
-kubectl apply -f azure/k8s/service.yaml
-kubectl apply -f azure/k8s/ingress.yaml
+kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/service.yaml
+kubectl apply -f k8s/ingress.yaml
 
