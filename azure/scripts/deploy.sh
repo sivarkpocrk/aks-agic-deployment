@@ -102,6 +102,20 @@ az aks get-credentials --resource-group $RG --name $AKS_NAME
 # Enable AGIC
 APPGW_ID=$(az network application-gateway show --resource-group $RG --name $APPGW_NAME --query id -o tsv)
 
+# Get AKS managed identity used by AGIC
+AGIC_PRINCIPAL_ID=$(az aks show --resource-group $RG --name $AKS_NAME --query "identity.principalId" -o tsv)
+
+SUB_ID=$(az account show --query id -o tsv)
+
+# Assign RBAC roles for AGIC
+az role assignment create --assignee $AGIC_PRINCIPAL_ID --role "Reader" --scope "/subscriptions/$SUB_ID/resourceGroups/$RG"
+az role assignment create --assignee $AGIC_PRINCIPAL_ID --role "Contributor" --scope "$APPGW_ID"
+az role assignment create --assignee $AGIC_PRINCIPAL_ID --role "Network Contributor" --scope "/subscriptions/$SUB_ID/resourceGroups/$RG/providers/Microsoft.Network/virtualNetworks/$VNET_NAME/subnets/$APPGW_SUBNET"
+
+# Wait for role propagation
+echo "Waiting for RBAC roles to propagate..."
+sleep 30
+
 az aks enable-addons \
   --resource-group $RG \
   --name $AKS_NAME \
@@ -122,54 +136,54 @@ while true; do
 done
 
 
-# Get AKS Managed Identity client ID
+# # Get AKS Managed Identity client ID
 
-SUB_ID=$(az account show --query id -o tsv)
-
-
-IDENTITY_CLIENT_ID=$(az aks show \
-  --resource-group $RG \
-  --name $AKS_NAME \
-  --query "identityProfile.kubeletidentity.clientId" -o tsv)
-
-echo "Waiting for RBAC roles to propagate..."
-sleep 30
-
-# Get the AKS MI object ID for AGIC (not kubelet, but AKS MSI)
-AGIC_PRINCIPAL_ID=$(az aks show \
-  --resource-group $RG \
-  --name $AKS_NAME \
-  --query "identity.principalId" -o tsv)
-
-echo "Waiting for RBAC roles to propagate...az role assignment create"
-sleep 30
+# SUB_ID=$(az account show --query id -o tsv)
 
 
-# Assign required roles
-az role assignment create \
-  --assignee $AGIC_PRINCIPAL_ID \
-  --role "Reader" \
-  --scope "/subscriptions/$SUB_ID/resourceGroups/$RG"
+# IDENTITY_CLIENT_ID=$(az aks show \
+#   --resource-group $RG \
+#   --name $AKS_NAME \
+#   --query "identityProfile.kubeletidentity.clientId" -o tsv)
 
-echo "Waiting for RBAC roles to propagate...role assignment create"
-sleep 30
+# echo "Waiting for RBAC roles to propagate..."
+# sleep 30
 
-az role assignment create \
-  --assignee $AGIC_PRINCIPAL_ID \
-  --role "Contributor" \
-  --scope $(az network application-gateway show --resource-group $RG --name $APPGW_NAME --query id -o tsv)
+# # Get the AKS MI object ID for AGIC (not kubelet, but AKS MSI)
+# AGIC_PRINCIPAL_ID=$(az aks show \
+#   --resource-group $RG \
+#   --name $AKS_NAME \
+#   --query "identity.principalId" -o tsv)
 
-echo "Waiting for RBAC roles to propagate...az role assignment create"
-sleep 30
+# echo "Waiting for RBAC roles to propagate...az role assignment create"
+# sleep 30
 
 
-az role assignment create \
-  --assignee $AGIC_PRINCIPAL_ID \
-  --role "Network Contributor" \
-  --scope "/subscriptions/$SUB_ID/resourceGroups/$RG/providers/Microsoft.Network/virtualNetworks/$VNET_NAME/subnets/$APPGW_SUBNET"
+# # Assign required roles
+# az role assignment create \
+#   --assignee $AGIC_PRINCIPAL_ID \
+#   --role "Reader" \
+#   --scope "/subscriptions/$SUB_ID/resourceGroups/$RG"
 
-echo "before kibectl Waiting for RBAC roles to propagate..."
-sleep 30
+# echo "Waiting for RBAC roles to propagate...role assignment create"
+# sleep 30
+
+# az role assignment create \
+#   --assignee $AGIC_PRINCIPAL_ID \
+#   --role "Contributor" \
+#   --scope $(az network application-gateway show --resource-group $RG --name $APPGW_NAME --query id -o tsv)
+
+# echo "Waiting for RBAC roles to propagate...az role assignment create"
+# sleep 30
+
+
+# az role assignment create \
+#   --assignee $AGIC_PRINCIPAL_ID \
+#   --role "Network Contributor" \
+#   --scope "/subscriptions/$SUB_ID/resourceGroups/$RG/providers/Microsoft.Network/virtualNetworks/$VNET_NAME/subnets/$APPGW_SUBNET"
+
+# echo "before kibectl Waiting for RBAC roles to propagate..."
+# sleep 30
 
 if [[ ! -f k8s/deployment.yaml || ! -f k8s/service.yaml || ! -f k8s/ingress.yaml ]]; then
   echo "Error: One or more K8s YAML files missing in 'k8s/' directory."
@@ -181,3 +195,15 @@ kubectl apply -f k8s/deployment.yaml
 kubectl apply -f k8s/service.yaml
 kubectl apply -f k8s/ingress.yaml
 
+# Wait for external IP
+echo "Waiting for external IP assignment..."
+while true; do
+  IP=$(kubectl get ingress --all-namespaces -o jsonpath="{.items[0].status.loadBalancer.ingress[0].ip}" 2>/dev/null || true)
+  if [[ -n "$IP" ]]; then
+    echo "Application Gateway ingress is available at: http://$IP"
+    break
+  else
+    echo "Waiting for ingress IP..."
+    sleep 10
+  fi
+done
