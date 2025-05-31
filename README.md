@@ -44,11 +44,11 @@ git push -u origin main
 
 SUBSCRIPTION_ID=$(az account show --query id -o tsv)
 
-az ad sp create-for-rbac \
+- `az ad sp create-for-rbac \
   --name "github-deploy-aks-agic" \
   --role "Contributor" \
   --scopes /subscriptions/$SUBSCRIPTION_ID \
-  --sdk-auth
+  --sdk-auth`
 
 
 {
@@ -64,25 +64,29 @@ az ad sp create-for-rbac \
   "managementEndpointUrl": "https://management.core.windows.net/"
 }
 
-above example Output will be displayed on terminal (azure cli) after service principal creation command and copy the JSON output and follow below step.
+- above example Output will be displayed on terminal (azure cli) after service principal creation command and copy the JSON output and follow below step.
 
 ## Add to GitHub Repository Secrets
-Go to your GitHub repo.
+- `Go to your GitHub repo.`
 
-Navigate to: Settings > Secrets and variables > Actions > New repository secret.
+- `Navigate to: Settings > Secrets and variables > Actions > New repository secret.`
 
-Name it: AZURE_CREDENTIALS or your desired variable name
+- `Name it: AZURE_CREDENTIALS or your desired variable name`
 
-Paste the entire JSON output from the command above.
+- `Paste the entire JSON output from the command above.`
 
-Go to GitHub repo → Settings → Secrets and Variables → Actions:
+- `Go to GitHub repo → Settings → Secrets and Variables → Actions:`
 
+- Add:
 
-Add:
+- AZURE_CREDENTIALS: JSON from az ad sp create-for-rbac ... --sdk-auth
 
-AZURE_CREDENTIALS: JSON from az ad sp create-for-rbac ... --sdk-auth
+- (Optional) ARM_CLIENT_ID, ARM_CLIENT_SECRET, ARM_SUBSCRIPTION_ID, ARM_TENANT_ID for Terraform workflows
 
-(Optional) ARM_CLIENT_ID, ARM_CLIENT_SECRET, ARM_SUBSCRIPTION_ID, ARM_TENANT_ID for Terraform workflows
+## Use it in your role assignment check
+
+- SP_APP_ID=$(az ad sp list --display-name github-deploy-aks-agic --query "[0].appId" -o tsv)
+- az role assignment list --assignee $SP_APP_ID --output table
 
 
 # Command history of Trouble shooting
