@@ -191,19 +191,19 @@ if [[ ! -f k8s/deployment.yaml || ! -f k8s/service.yaml || ! -f k8s/ingress.yaml
 fi
 
 # Deploy K8s objects
-kubectl apply -f k8s/deployment.yaml
-kubectl apply -f k8s/service.yaml
-kubectl apply -f k8s/ingress.yaml
+# kubectl apply -f k8s/deployment.yaml
+# kubectl apply -f k8s/service.yaml
+# kubectl apply -f k8s/ingress.yaml
 
 # Wait for external IP
-echo "Waiting for external IP assignment..."
-while true; do
-  IP=$(kubectl get ingress --all-namespaces -o jsonpath="{.items[0].status.loadBalancer.ingress[0].ip}" 2>/dev/null || true)
-  if [[ -n "$IP" ]]; then
-    echo "Application Gateway ingress is available at: http://$IP"
-    break
-  else
-    echo "Waiting for ingress IP..."
-    sleep 10
-  fi
-done
+# echo "Waiting for external IP assignment..."
+# while true; do
+#  IP=$(kubectl get ingress --all-namespaces -o jsonpath="{.items[0].status.loadBalancer.ingress[0].ip}" 2>/dev/null || true)
+#  if [[ -n "$IP" ]]; then
+#    echo "Application Gateway ingress is available at: http://$IP"
+#    break
+#  else
+#    echo "Waiting for ingress IP..."
+#    sleep 10
+#  fi
+#done
